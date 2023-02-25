@@ -1,1 +1,106 @@
-
+Main.java
+    package com.mjtexture;
+    
+    import java.io.BufferedInputStream;
+    import java.io.FileOutputStream;
+    import java.io.IOException;
+    import java.net.URL;
+    import java.util.HashMap;
+    import java.util.Map;
+    
+    import org.bukkit.ChatColor;
+    import org.bukkit.command.Command;
+    import org.bukkit.command.CommandSender;
+    import org.bukkit.configuration.file.FileConfiguration;
+    import org.bukkit.entity.Player;
+    import org.bukkit.plugin.java.JavaPlugin;
+    import org.json.simple.JSONArray;
+    import org.json.simple.JSONObject;
+    import org.json.simple.parser.JSONParser;
+    import org.json.simple.parser.ParseException;
+    
+    public class Main extends JavaPlugin {
+    
+        private Map<String, String> textures;
+    
+        @Override
+        public void onEnable() {
+            getLogger().info("Plugin M.J Texture habilitado");
+    
+            // Cargar texturas desde el archivo de configuración
+            textures = new HashMap<String, String>();
+            FileConfiguration config = getConfig();
+            for (String key : config.getKeys(false)) {
+                textures.put(key, config.getString(key));
+            }
+        }
+    
+        @Override
+        public void onDisable() {
+            getLogger().info("Plugin M.J Texture deshabilitado");
+        }
+    
+        @Override
+        public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("Este comando solo puede ser usado por jugadores");
+                return true;
+            }
+    
+            Player player = (Player) sender;
+    
+            if (cmd.getName().equalsIgnoreCase("settexture")) {
+    
+                if (args.length != 2) {
+                    player.sendMessage(ChatColor.RED + "Uso correcto: /settexture <link_de_textura> <llave_de_autorizacion>");
+                    return true;
+                }
+    
+                String textureUrl = args[0];
+                String authKey = args[1];
+    
+                // Comprobar llave de autorización
+                if (!authKey.equals("mysecretkey")) {
+                    player.sendMessage(ChatColor.RED + "Llave de autorización inválida");
+                    return true;
+                }
+    
+                // Descargar textura
+                try {
+                    URL url = new URL(textureUrl);
+                    BufferedInputStream bis = new BufferedInputStream(url.openStream());
+                    FileOutputStream fos = new FileOutputStream(getDataFolder() + "/" + player.getUniqueId() + ".png");
+                    byte[] buffer = new byte[1024];
+                    int count = 0;
+                    while ((count = bis.read(buffer, 0, 1024)) != -1) {
+                        fos.write(buffer, 0, count);
+                    }
+                    fos.close();
+                    bis.close();
+                    player.sendMessage(ChatColor.GREEN + "Textura descargada correctamente");
+                } catch (IOException e) {
+                    player.sendMessage(ChatColor.RED + "Error al descargar la textura");
+                    e.printStackTrace();
+                    return true;
+                }
+    
+                // Actualizar textura del jugador
+                String texturePath = getDataFolder() + "/" + player.getUniqueId() + ".png";
+                try {
+                    Object gameProfile = player.getClass().getMethod("getProfile").invoke(player);
+                    Object propertyMap = gameProfile.getClass().getMethod("getProperties").invoke(gameProfile);
+                    Class<?> property = Class.forName("com.mojang.authlib.properties.Property");
+                    Object texturesProperty = profile.getProperties().get("textures");
+    if (texturesProperty instanceof Property) {
+        String texturesJson = ((Property) texturesProperty).getValue();
+        String decodedTextures = new String(Base64.getDecoder().decode(texturesJson));
+        try {
+            JsonObject texturesObject = new JsonParser().parse(decodedTextures).getAsJsonObject();
+            JsonObject texture = texturesObject.getAsJsonObject("textures").getAsJsonObject("SKIN");
+            String currentUrl = texture.get("url").getAsString();
+            return currentUrl;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }");
